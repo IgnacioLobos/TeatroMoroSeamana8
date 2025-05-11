@@ -1,0 +1,1356 @@
+package teatromorosemana8;
+
+import java.util.Scanner;
+import java.util.InputMismatchException;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.ArrayList;
+
+public class TeatroMoroSemana8 {
+
+    private static final int FILAS_VIP = 3;
+    private static final int ASIENTOS_VIP = 4;
+    private static final boolean[] filaVip1 = new boolean[ASIENTOS_VIP];
+    private static final boolean[] filaVip2 = new boolean[ASIENTOS_VIP];
+    private static final boolean[] filaVip3 = new boolean[ASIENTOS_VIP];
+
+    private static final int FILAS_PLATEA_BAJA = 3;
+    private static final int ASIENTOS_PLATEA_BAJA = 8;
+    private static final boolean[] filaPlateaBaja1 = new boolean[ASIENTOS_PLATEA_BAJA];
+    private static final boolean[] filaPlateaBaja2 = new boolean[ASIENTOS_PLATEA_BAJA];
+    private static final boolean[] filaPlateaBaja3 = new boolean[ASIENTOS_PLATEA_BAJA];
+
+    private static final int FILAS_PLATEA_ALTA = 3;
+    private static final int ASIENTOS_PLATEA_ALTA = 12;
+    private static final boolean[] filaPlateaAlta1 = new boolean[ASIENTOS_PLATEA_ALTA];
+    private static final boolean[] filaPlateaAlta2 = new boolean[ASIENTOS_PLATEA_ALTA];
+    private static final boolean[] filaPlateaAlta3 = new boolean[ASIENTOS_PLATEA_ALTA];
+
+    private static final int FILAS_GALERIA = 3;
+    private static final int ASIENTOS_GALERIA = 16;
+    private static final boolean[] filaGaleria1 = new boolean[ASIENTOS_GALERIA];
+    private static final boolean[] filaGaleria2 = new boolean[ASIENTOS_GALERIA];
+    private static final boolean[] filaGaleria3 = new boolean[ASIENTOS_GALERIA];
+
+    private static final int FILAS_PALCO = 4;
+    private static final int ASIENTOS_PALCO = 2;
+    private static final boolean[] filaPalco1 = new boolean[ASIENTOS_PALCO];
+    private static final boolean[] filaPalco2 = new boolean[ASIENTOS_PALCO];
+    private static final boolean[] filaPalco3 = new boolean[ASIENTOS_PALCO];
+    private static final boolean[] filaPalco4 = new boolean[ASIENTOS_PALCO];
+
+    public static void mostrarPlanoAsientos(int tipoFilas, int asientosPorFila, boolean[]... filas) {
+        for (int f = 0; f < tipoFilas; f++) {
+            switch (asientosPorFila) {
+                case ASIENTOS_VIP ->
+                    System.out.print("Fila VIP " + (f + 1) + ":                          ");
+                case ASIENTOS_PLATEA_BAJA ->
+                    System.out.print("Fila Platea Baja " + (f + 1) + ":            ");
+                case ASIENTOS_PLATEA_ALTA ->
+                    System.out.print("Fila Platea Alta " + (f + 1) + ":      ");
+                case ASIENTOS_GALERIA ->
+                    System.out.print("Fila Galeria " + (f + 1) + ":    ");
+                case ASIENTOS_PALCO ->
+                    System.out.print("Columna Palco " + (f + 1) + ":  ");
+                default -> {
+                }
+            }
+            for (int a = 0; a < asientosPorFila; a++) {
+                if (filas[f][a]) {
+                    System.out.print("[X]");
+                } else {
+                    System.out.print("[O]");
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    private static int filaSeleccionada;
+    private static int asientoSeleccionado;
+
+    public static boolean seleccionarAsiento(Scanner sc, int tipoFilas, int asientosPorFila, boolean[]... filas) {
+        String saltoDeLinea = System.lineSeparator();
+        System.out.print("\nSeleccione una fila (1-" + tipoFilas + ") o 0 para salir: ");
+        filaSeleccionada = sc.nextInt();
+
+        if (filaSeleccionada == 0) {
+            return true;
+        } else if (filaSeleccionada < 1 || filaSeleccionada > tipoFilas) {
+            System.out.println("Fila invalida.");
+            return false;
+        }
+
+        System.out.print("Seleccione un asiento (1-" + asientosPorFila + "): ");
+        asientoSeleccionado = sc.nextInt();
+
+        if (asientoSeleccionado < 1 || asientoSeleccionado > asientosPorFila) {
+            System.out.println("Asiento invalido.");
+            return false;
+        }
+
+        boolean[] fila = filas[filaSeleccionada - 1];
+
+        if (fila[asientoSeleccionado - 1]) {
+            System.out.println("Ese asiento ya esta ocupado.");
+            return false;
+        } else {
+            fila[asientoSeleccionado - 1] = true;
+            System.out.println("Compra exitosa. Fila: " + filaSeleccionada + " Asiento: " + asientoSeleccionado + saltoDeLinea);
+            return true;
+        }
+    }
+
+    static Timer timerReserva = null;
+    static boolean reservaPendiente = false;
+    static int reservaFila = -1;
+    static int reservaAsiento = -1;
+
+    public static boolean seleccionarReserva(Scanner sc, int tipoFilas, int asientosPorFila, boolean[]... filas) {
+        System.out.print("\nSeleccione una fila (1-" + tipoFilas + ") o 0 para salir: ");
+        filaSeleccionada = sc.nextInt();
+
+        if (filaSeleccionada == 0) {
+            return false;
+        } else if (filaSeleccionada < 1 || filaSeleccionada > tipoFilas) {
+            System.out.println("Fila invalida.");
+            return false;
+        }
+
+        System.out.print("Seleccione un asiento (1-" + asientosPorFila + "): ");
+        asientoSeleccionado = sc.nextInt();
+
+        if (asientoSeleccionado < 1 || asientoSeleccionado > asientosPorFila) {
+            System.out.println("Asiento invalido.");
+            return false;
+        }
+
+        final boolean[] fila = filas[filaSeleccionada - 1];
+
+        if (fila[asientoSeleccionado - 1]) {
+            System.out.println("Ese asiento ya esta ocupado.");
+            return false;
+        } else {
+            fila[asientoSeleccionado - 1] = true;
+            System.out.println("Reserva exitosa: Fila " + filaSeleccionada + " Asiento: " + asientoSeleccionado);
+
+            timerReserva = new Timer();
+
+            final int filaTemporal = filaSeleccionada;
+            final int asientoTemporal = asientoSeleccionado;
+
+            TimerTask tareadeCancelacion = new TimerTask() {
+                @Override
+
+                public void run() {
+
+                    fila[asientoTemporal - 1] = false;
+                    System.out.println("!! La Reserva de Fila " + filaTemporal + " Asiento :" + asientoTemporal + " fue Cancelada por tiempo de espera");
+                    reservaPendiente = false;
+                    reservaFila = -1;
+                    reservaAsiento = 1;
+                    timerReserva.cancel();
+                }
+            };
+            timerReserva.schedule(tareadeCancelacion, 600000);
+        }
+        return true;
+    }
+
+    private static String tarifaSeleccionada = "";
+    private static String descuentoEtareo = "";
+    private static double totalValorEntradaSeleccionada;
+    private static int edadCliente;
+
+    public static double calcularDescuento(Scanner sc, double precioBase) {
+        String saltoDeLinea = System.lineSeparator();
+        System.out.println("Por favor, ingrese la edad de la persona que utilizara esta entrada.");
+        edadCliente = sc.nextInt();
+
+        while (true) {
+            System.out.println(saltoDeLinea + "Desea comprar esta entrada con un descuento de promocion?" + saltoDeLinea + "(Escriba 1 para Estudiantes, 2 para mujeres, 0 para no aplicar promocion):");
+            int tarifa;
+            tarifa = sc.nextInt();
+
+            switch (tarifa) {
+                case 1 -> {
+                    System.out.println("Se ha escogido la tarifa dirigida a estudiantes. Se aplicara un descuento del 15%.");
+                    tarifaSeleccionada = "Estudiante";
+                    totalValorEntradaSeleccionada = precioBase * 0.85;
+                }
+                case 2 -> {
+                    System.out.println("Se ha escogido la tarifa dirigida a la Mujeres. Se aplicara un descuento del 20%.");
+                    tarifaSeleccionada = "Mujeres";
+                    totalValorEntradaSeleccionada = precioBase * 0.80;
+
+                }
+                case 0 -> {
+                    System.out.println("Sin descuento. Se aplicara la tarifa de Publico General.");
+                    tarifaSeleccionada = "Publico General";
+                    totalValorEntradaSeleccionada = precioBase;
+                }
+                default -> {
+                    System.out.println("Opción inválida. Intente nuevamente.");
+                }
+            }
+            if (edadCliente < 18) {
+                System.out.println("Asignado descuento adicional del 10% dirigido a Niños/as");
+                descuentoEtareo = "Niños/as";
+                totalValorEntradaSeleccionada = totalValorEntradaSeleccionada * 0.9;
+                return totalValorEntradaSeleccionada;
+
+            } else if (edadCliente > 60) {
+                System.out.println("Asignado descuento adicional del 25% dirigido a personas de Tercera Edad");
+                descuentoEtareo = "Adultos/as Mayores";
+                totalValorEntradaSeleccionada = totalValorEntradaSeleccionada * 0.75;
+                return totalValorEntradaSeleccionada;
+            } else {
+                System.out.println("Sin descuento adicional");
+                descuentoEtareo = "Sin descuento";
+                totalValorEntradaSeleccionada = precioBase;
+                return totalValorEntradaSeleccionada;
+            }
+        }
+    }
+
+    private static final ArrayList<Integer> historialIdCliente = new ArrayList<>();
+    private static final ArrayList<String> historialNombreCliente = new ArrayList<>();
+    private static final ArrayList<String> historialTipoDeEntrada = new ArrayList<>();
+    private static final ArrayList<Integer> historialFilas = new ArrayList<>();
+    private static final ArrayList<Integer> historialAsientos = new ArrayList<>();
+    private static final ArrayList<String> historialTarifas = new ArrayList<>();
+    private static final ArrayList<String> historialDescuentoEtareo = new ArrayList<>();
+    private static final ArrayList<Double> historialPrecios = new ArrayList<>();
+    private static final ArrayList<Double> historialPrecioFinal = new ArrayList<>();
+
+    public static void añadirAlCarrito(int id, String nombre, String sector, int asiento, int fila, String tarifa, String descuentoEdad, double precioBase, double precioFinal) {
+        historialIdCliente.add(id);
+        historialNombreCliente.add(nombre);
+        historialTipoDeEntrada.add(sector);
+        historialAsientos.add(asiento);
+        historialFilas.add(fila);
+        historialTarifas.add(tarifa);
+        historialDescuentoEtareo.add(descuentoEtareo);
+        historialPrecios.add(precioBase);
+        historialPrecioFinal.add(totalValorEntradaSeleccionada);
+    }
+
+    private static final ArrayList<Integer> historialIdClienteReserva = new ArrayList<>();
+    private static final ArrayList<String> historialNombreClienteReserva = new ArrayList<>();
+    private static final ArrayList<String> historialTipoDeEntradaReserva = new ArrayList<>();
+    private static final ArrayList<Integer> historialFilasReserva = new ArrayList<>();
+    private static final ArrayList<Integer> historialAsientosReserva = new ArrayList<>();
+    private static final ArrayList<String> historialTarifasReserva = new ArrayList<>();
+    private static final ArrayList<String> historialDescuentoEtareoReserva = new ArrayList<>();
+    private static final ArrayList<Double> historialPreciosReserva = new ArrayList<>();
+    private static final ArrayList<Double> historialPrecioFinalReserva = new ArrayList<>();
+
+    public static void añadirAlCarritoReserva(int id, String nombre, String sector, int asiento, int fila, String tarifa, String descuentoEdad, double precioBase, double precioFinal) {
+        historialIdClienteReserva.add(id);
+        historialNombreClienteReserva.add(nombre);
+        historialTipoDeEntradaReserva.add(sector);
+        historialAsientosReserva.add(asiento);
+        historialFilasReserva.add(fila);
+        historialTarifasReserva.add(tarifa);
+        historialDescuentoEtareoReserva.add(descuentoEtareo);
+        historialPreciosReserva.add(precioBase);
+        historialPrecioFinalReserva.add(totalValorEntradaSeleccionada);
+    }
+
+    public static void confirmarReservaCliente() {
+        timerReserva.cancel();
+
+        reservaPendiente = false;
+        reservaFila = -1;
+        reservaAsiento = 1;
+
+        historialIdCliente.addAll(historialIdClienteReserva);
+        historialNombreCliente.addAll(historialNombreClienteReserva);
+        historialTipoDeEntrada.addAll(historialTipoDeEntradaReserva);
+        historialAsientos.addAll(historialAsientosReserva);
+        historialFilas.addAll(historialFilasReserva);
+        historialTarifas.addAll(historialTarifasReserva);
+        historialDescuentoEtareo.addAll(historialDescuentoEtareoReserva);
+        historialPrecios.addAll(historialPreciosReserva);
+        historialPrecioFinal.addAll(historialPrecioFinalReserva);
+
+        historialIdClienteReserva.clear();
+        historialNombreClienteReserva.clear();
+        historialTipoDeEntradaReserva.clear();
+        historialAsientosReserva.clear();
+        historialFilasReserva.clear();
+        historialTarifasReserva.clear();
+        historialPreciosReserva.clear();
+        historialPrecioFinalReserva.clear();
+    }
+
+    public static void liberarAsiento(String tipoEntrada, int fila, int asiento) {
+        switch (tipoEntrada) {
+            case "Sector VIP" -> {
+                if (fila == 1) {
+                    filaVip1[asiento - 1] = false;
+                } else if (fila == 2) {
+                    filaVip2[asiento - 1] = false;
+                } else if (fila == 3) {
+                    filaVip3[asiento - 1] = false;
+                }
+            }
+            case "Palco" -> {
+                if (fila == 1) {
+                    filaVip1[asiento - 1] = false;
+                } else if (fila == 2) {
+                    filaVip2[asiento - 1] = false;
+                } else if (fila == 3) {
+                    filaVip3[asiento - 1] = false;
+                }
+            }
+            case "Platea Baja" -> {
+                if (fila == 1) {
+                    filaPlateaBaja1[asiento - 1] = false;
+                } else if (fila == 2) {
+                    filaPlateaBaja2[asiento - 1] = false;
+                } else if (fila == 3) {
+                    filaPlateaBaja3[asiento - 1] = false;
+                }
+            }
+            case "Platea Alta" -> {
+                if (fila == 1) {
+                    filaPlateaAlta1[asiento - 1] = false;
+                } else if (fila == 2) {
+                    filaPlateaAlta2[asiento - 1] = false;
+                } else if (fila == 3) {
+                    filaPlateaAlta3[asiento - 1] = false;
+                }
+            }
+            case "Galeria" -> {
+                if (fila == 1) {
+                    filaPlateaAlta1[asiento - 1] = false;
+                } else if (fila == 2) {
+                    filaPlateaAlta2[asiento - 1] = false;
+                } else if (fila == 3) {
+                    filaPlateaAlta3[asiento - 1] = false;
+                }
+            }
+            default -> {
+                System.out.println("Tipo de entrada no reconocido.");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        String saltoDeLinea = System.lineSeparator();
+        Scanner sc = new Scanner(System.in);
+
+        int opcionMenu = 0;
+        int opcionMenuRetorno = 0;
+        int opcionEliminarEntrada = 0;
+        int opcionEditarEntrada = 0;
+        String nuevoNombre = null;
+
+        String sectorVip = "Sector VIP";
+        String palco = "Palco";
+        String PlateaBaja = "Platea Baja";
+        String PlateaAlta = "Platea Alta";
+        String galeria = "Galeria";
+
+        final double precioVip = 30000;
+        final double precioPalco = 20000;
+        final double precioPlateaBaja = 15000;
+        final double precioPlateaAlta = 18000;
+        final double precioGaleria = 10000;
+
+        int entradasConfirmadas;
+        int entradasSolicitadas;
+        String nombreCliente = null;
+        int idCliente = 100;
+
+        double totalCompras = 0;
+        double montoPago = 0;
+        double vuelto = 0;
+
+        System.out.println("Hola. Bienvenido/a a la boleteria virtual del teatro Moro.");
+        for (int i = 0;; i++) {
+
+            System.out.println(saltoDeLinea + "=========MENU PRINCIPAL=========" + saltoDeLinea
+                    + "1. Comprar entrada" + saltoDeLinea
+                    + "2. Reservar entrada" + saltoDeLinea
+                    + "3. Confirmar reservas al carrito" + saltoDeLinea
+                    + "4. Ver carrito" + saltoDeLinea
+                    + "5. Ver asientos disponibles" + saltoDeLinea
+                    + "6. Ver Promociones" + saltoDeLinea
+                    + "7. Salir" + saltoDeLinea
+                    + "Seleccione una opcion (Escriba 1, 2, 3, 4, 5, o 6 para desplazarse por el menu): ");
+            opcionMenu = sc.nextInt();
+
+            switch (opcionMenu) {
+                case 1 -> {
+                    System.out.println("Has seleccionado 'Compra de entradas'.");
+                    do {
+                        System.out.println(saltoDeLinea + "=========COMPRA DE ENTRADAS=========" + saltoDeLinea + saltoDeLinea
+                                + "1- VIP =================== $" + precioVip + saltoDeLinea
+                                + "2- Palco ================= $" + precioPalco + saltoDeLinea
+                                + "3- Platea baja =========== $" + precioPlateaBaja + saltoDeLinea
+                                + "4- Platea alta =========== $" + precioPlateaAlta + saltoDeLinea
+                                + "5- Galeria =============== $" + precioGaleria + saltoDeLinea
+                                + "6- Volver al Menu Principal" + saltoDeLinea + saltoDeLinea
+                                + "Por favor, escribe el numero indicado para escoger el tipo de entrada que deseas comprar. (1, 2, 3, 4, 5 o 6 = Volver al Menu Principal.)");
+                        opcionMenu = sc.nextInt();
+
+                        switch (opcionMenu) {
+                            case 1 -> {
+                                entradasConfirmadas = 0;
+                                System.out.println("Has seleccionado una entrada para ingresar al sector VIP." + saltoDeLinea
+                                        + "valor: $" + precioVip + saltoDeLinea + saltoDeLinea
+                                        + "Cuantas entradas de tipo VIP desea comprar?");
+
+                                while (true) {
+                                    entradasSolicitadas = sc.nextInt();
+                                    if (entradasSolicitadas <= 0) {
+                                        System.out.println("Debe ingresar un numero mayor a 0.");
+                                        continue;
+                                    }
+                                    break;
+                                }
+
+                                System.out.println("(Plano de la sala (X = ocupado, O = libre)");
+                                mostrarPlanoAsientos(FILAS_VIP, ASIENTOS_VIP, filaVip1, filaVip2, filaVip3);
+
+                                while (entradasConfirmadas < entradasSolicitadas) {
+                                    while (!seleccionarAsiento(sc, FILAS_VIP, ASIENTOS_VIP, filaVip1, filaVip2, filaVip3)) {
+                                    }
+                                    if (filaSeleccionada != 0) {
+                                        mostrarPlanoAsientos(FILAS_VIP, ASIENTOS_VIP, filaVip1, filaVip2, filaVip3);
+                                        calcularDescuento(sc, precioVip);
+
+                                        System.out.println("A nombre de quien desea comprar las entradas?");
+                                        sc.nextLine();
+                                        nombreCliente = sc.nextLine();
+                                        idCliente++;
+
+                                        añadirAlCarrito(idCliente, nombreCliente, sectorVip, asientoSeleccionado, filaSeleccionada, tarifaSeleccionada, descuentoEtareo, precioVip, totalValorEntradaSeleccionada);
+
+                                        entradasConfirmadas++;
+                                    } else if (filaSeleccionada == 0) {
+                                        break;
+                                    }
+                                }
+
+                                System.out.println("Desea seguir comprando entradas? (1 = Si, 0 = No, volver al menu principal)");
+                                opcionMenuRetorno = sc.nextInt();
+
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Error... Ingrgese una opcion valida. Desea seguir comprando entradas? (1 = Si, 0 = No, volver al menu principal");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                            case 2 -> {
+                                entradasConfirmadas = 0;
+                                System.out.println("Has seleccionado una entrada para ingresar al sector Palco." + saltoDeLinea
+                                        + "valor: $" + precioPalco + saltoDeLinea + saltoDeLinea
+                                        + "Cuantas entradas de tipo Palco desea comprar?");
+
+                                while (true) {
+                                    entradasSolicitadas = sc.nextInt();
+                                    if (entradasSolicitadas <= 0) {
+                                        System.out.println("Debe ingresar un numero mayor a 0.");
+                                        continue;
+                                    }
+                                    break;
+                                }
+                                System.out.println("(Plano de la sala (X = ocupado, O = libre)");
+                                mostrarPlanoAsientos(FILAS_PALCO, ASIENTOS_PALCO, filaPalco1, filaPalco2, filaPalco3, filaPalco4);
+
+                                while (entradasConfirmadas < entradasSolicitadas) {
+                                    while (!seleccionarReserva(sc, FILAS_PALCO, ASIENTOS_PALCO, filaPalco1, filaPalco2, filaPalco3, filaPalco4)) {
+                                    }
+                                    if (filaSeleccionada == 0) {
+                                        mostrarPlanoAsientos(FILAS_PALCO, ASIENTOS_PALCO, filaPalco1, filaPalco2, filaPalco3, filaPalco4);
+                                        calcularDescuento(sc, precioVip);
+
+                                        System.out.println("A nombre de quien desea reservar las entradas?");
+                                        sc.nextLine();
+                                        nombreCliente = sc.nextLine();
+                                        idCliente++;
+
+                                        añadirAlCarrito(idCliente, nombreCliente, palco, asientoSeleccionado, filaSeleccionada, tarifaSeleccionada, descuentoEtareo, precioPalco, totalValorEntradaSeleccionada);
+
+                                        entradasConfirmadas++;
+                                    } else if (filaSeleccionada == 0) {
+                                        break;
+                                    }
+                                }
+                                System.out.println("Desea seguir comprando entradas? (1 = Si, 0 = No, volver al menu principal)");
+                                opcionMenuRetorno = sc.nextInt();
+
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Error... Ingrgese una opcion valida. Desea seguir comprando entradas? (1 = Si, 0 = No, volver al menu principal");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                            case 3 -> {
+                                entradasConfirmadas = 0;
+                                System.out.println("Has seleccionado una entrada para ingresar al sector PlateaBaja." + saltoDeLinea
+                                        + "valor: $" + precioPlateaBaja + saltoDeLinea + saltoDeLinea
+                                        + "Cuantas entradas de tipo PlateaBaja desea comprar?");
+
+                                while (true) {
+                                    entradasSolicitadas = sc.nextInt();
+                                    if (entradasSolicitadas <= 0) {
+                                        System.out.println("Debe ingresar un numero mayor a 0.");
+                                        continue;
+                                    }
+                                    break;
+                                }
+                                System.out.println("(Plano de la sala (X = ocupado, O = libre)");
+                                mostrarPlanoAsientos(FILAS_PLATEA_BAJA, ASIENTOS_PLATEA_BAJA, filaPlateaBaja1, filaPlateaBaja2, filaPlateaBaja3);
+
+                                while (entradasConfirmadas < entradasSolicitadas) {
+                                    while (!seleccionarAsiento(sc, FILAS_PLATEA_BAJA, ASIENTOS_PLATEA_BAJA, filaPlateaBaja1, filaPlateaBaja2, filaPlateaBaja3)) {
+                                    }
+                                    if (filaSeleccionada != 0) {
+                                        mostrarPlanoAsientos(FILAS_PLATEA_BAJA, ASIENTOS_PLATEA_BAJA, filaPlateaBaja1, filaPlateaBaja2, filaPlateaBaja3);
+                                        calcularDescuento(sc, precioPlateaBaja);
+
+                                        System.out.println("A nombre de quien desea comprar las entradas?");
+                                        sc.nextLine();
+                                        nombreCliente = sc.nextLine();
+                                        idCliente++;
+
+                                        añadirAlCarrito(idCliente, nombreCliente, PlateaBaja, asientoSeleccionado, filaSeleccionada, tarifaSeleccionada, descuentoEtareo, precioPlateaBaja, totalValorEntradaSeleccionada);
+
+                                        entradasConfirmadas++;
+                                    } else if (filaSeleccionada == 0) {
+                                        break;
+                                    }
+                                }
+                                System.out.println("Desea seguir comprando entradas? (1 = Si, 0 = No, volver al menu principal)");
+                                opcionMenuRetorno = sc.nextInt();
+
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Error... Ingrgese una opcion valida. Desea seguir comprando entradas? (1 = Si, 0 = No, volver al menu principal");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                            case 4 -> {
+                                entradasConfirmadas = 0;
+                                System.out.println("Has seleccionado una entrada para ingresar al sector PlateaAlta." + saltoDeLinea
+                                        + "valor: $" + precioPlateaAlta + saltoDeLinea + saltoDeLinea
+                                        + "Cuantas entradas de tipo PlateaAlta desea comprar?");
+
+                                while (true) {
+                                    entradasSolicitadas = sc.nextInt();
+                                    if (entradasSolicitadas <= 0) {
+                                        System.out.println("Debe ingresar un numero mayor a 0.");
+                                        continue;
+                                    }
+                                    break;
+                                }
+                                System.out.println("(Plano de la sala (X = ocupado, O = libre)");
+                                mostrarPlanoAsientos(FILAS_PLATEA_ALTA, ASIENTOS_PLATEA_ALTA, filaPlateaAlta1, filaPlateaAlta2, filaPlateaAlta3);
+
+                                while (entradasConfirmadas < entradasSolicitadas) {
+                                    while (!seleccionarAsiento(sc, FILAS_PLATEA_ALTA, ASIENTOS_PLATEA_ALTA, filaPlateaAlta1, filaPlateaAlta2, filaPlateaAlta3)) {
+                                    }
+                                    if (filaSeleccionada != 0) {
+                                        mostrarPlanoAsientos(FILAS_PLATEA_ALTA, ASIENTOS_PLATEA_ALTA, filaPlateaAlta1, filaPlateaAlta2, filaPlateaAlta3);
+                                        calcularDescuento(sc, precioPlateaAlta);
+
+                                        System.out.println("A nombre de quien desea comprar las entradas?");
+                                        sc.nextLine();
+                                        nombreCliente = sc.nextLine();
+                                        idCliente++;
+
+                                        añadirAlCarrito(idCliente, nombreCliente, PlateaAlta, asientoSeleccionado, filaSeleccionada, tarifaSeleccionada, descuentoEtareo, precioPlateaAlta, totalValorEntradaSeleccionada);
+
+                                        entradasConfirmadas++;
+                                    } else if (filaSeleccionada == 0) {
+                                        break;
+                                    }
+                                }
+                                System.out.println("Desea seguir comprando entradas? (1 = Si, 0 = No, volver al menu principal)");
+                                opcionMenuRetorno = sc.nextInt();
+
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Error... Ingrgese una opcion valida. Desea seguir comprando entradas? (1 = Si, 0 = No, volver al menu principal");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                            case 5 -> {
+                                entradasConfirmadas = 0;
+                                System.out.println("Has seleccionado una entrada para ingresar al sector Galeria." + saltoDeLinea
+                                        + "valor: $" + precioGaleria + saltoDeLinea + saltoDeLinea
+                                        + "Cuantas entradas de tipo PlateaAlta desea comprar?");
+
+                                while (true) {
+                                    entradasSolicitadas = sc.nextInt();
+                                    if (entradasSolicitadas <= 0) {
+                                        System.out.println("Debe ingresar un numero mayor a 0.");
+                                        continue;
+                                    }
+                                    break;
+                                }
+                                System.out.println("(Plano de la sala (X = ocupado, O = libre)");
+                                mostrarPlanoAsientos(FILAS_GALERIA, ASIENTOS_GALERIA, filaGaleria1, filaGaleria2, filaGaleria3);
+
+                                while (entradasConfirmadas < entradasSolicitadas) {
+                                    while (!seleccionarReserva(sc, FILAS_GALERIA, ASIENTOS_GALERIA, filaGaleria1, filaGaleria2, filaGaleria3)) {
+                                    }
+                                    if (filaSeleccionada == 0) {
+                                        mostrarPlanoAsientos(FILAS_GALERIA, ASIENTOS_GALERIA, filaGaleria1, filaGaleria2, filaGaleria3);
+                                        calcularDescuento(sc, precioPlateaAlta);
+
+                                        System.out.println("A nombre de quien desea reservar las entradas?");
+                                        sc.nextLine();
+                                        nombreCliente = sc.nextLine();
+                                        idCliente++;
+
+                                        añadirAlCarrito(idCliente, nombreCliente, galeria, asientoSeleccionado, filaSeleccionada, tarifaSeleccionada, descuentoEtareo, precioGaleria, totalValorEntradaSeleccionada);
+
+                                        entradasConfirmadas++;
+                                    } else if (filaSeleccionada == 0) {
+                                        break;
+                                    }
+                                }
+                                System.out.println("Desea seguir comprando entradas? (1 = Si, 0 = No, volver al menu principal)");
+                                opcionMenuRetorno = sc.nextInt();
+
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Error... Ingrgese una opcion valida. Desea seguir comprando entradas? (1 = Si, 0 = No, volver al menu principal");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                            case 6 -> {
+                                opcionMenuRetorno = 0;
+                                break;
+                            }
+                            default -> {
+                                System.out.println("ERROR. Numero ingresado invalido. Ingrese 1 para volver a intentar, 0 para Volver al Menu Principal.");
+                                opcionMenuRetorno = sc.nextInt();
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Invalido... Ingrese 1 para volver a Compra de Entradas, 0 para Volver al Menu Principal.");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                        }
+                    } while (opcionMenuRetorno != 0);
+                    System.out.println("Volviendo al Menu Principal..." + saltoDeLinea
+                            + "---------oooooooooooooo---------");
+                }
+                case 2 -> {
+                    System.out.println("Has seleccionado 'Reservar entradas'.");
+                    do {
+                        System.out.println(saltoDeLinea + "=========RESERVA DE ENTRADAS=========" + saltoDeLinea + saltoDeLinea
+                                + "1- VIP =================== $" + precioVip + saltoDeLinea
+                                + "2- Palco ================= $" + precioPalco + saltoDeLinea
+                                + "3- Platea baja =========== $" + precioPlateaBaja + saltoDeLinea
+                                + "4- Platea alta =========== $" + precioPlateaAlta + saltoDeLinea
+                                + "5- Galeria =============== $" + precioGaleria + saltoDeLinea
+                                + "6- Volver al Menu Principal" + saltoDeLinea + saltoDeLinea
+                                + "Por favor, escribe el numero indicado para desplazarte por el Menu. (1, 2, 3, 4, 5 o 6 = Volver al Menu Principal.)");
+                        opcionMenu = sc.nextInt();
+
+                        switch (opcionMenu) {
+                            case 1 -> {
+                                entradasConfirmadas = 0;
+                                System.out.println("Has seleccionado una entrada para ingresar al sector VIP." + saltoDeLinea
+                                        + "valor: $" + precioVip + saltoDeLinea + saltoDeLinea
+                                        + "Cuantas entradas de tipo VIP desea reservar?");
+
+                                while (true) {
+                                    entradasSolicitadas = sc.nextInt();
+                                    if (entradasSolicitadas <= 0) {
+                                        System.out.println("Debe ingresar un numero mayor a 0.");
+                                        continue;
+                                    }
+                                    break;
+                                }
+
+                                System.out.println("(Plano de la sala (X = ocupado, O = libre)");
+                                mostrarPlanoAsientos(FILAS_VIP, ASIENTOS_VIP, filaVip1, filaVip2, filaVip3);
+
+                                while (entradasConfirmadas < entradasSolicitadas) {
+                                    while (!seleccionarReserva(sc, FILAS_VIP, ASIENTOS_VIP, filaVip1, filaVip2, filaVip3)) {
+                                    }
+                                    if (filaSeleccionada == 0) {
+                                        mostrarPlanoAsientos(FILAS_VIP, ASIENTOS_VIP, filaVip1, filaVip2, filaVip3);
+                                        calcularDescuento(sc, precioVip);
+
+                                        System.out.println("A nombre de quien desea reservar las entradas?");
+                                        sc.nextLine();
+                                        nombreCliente = sc.nextLine();
+                                        idCliente++;
+
+                                        añadirAlCarritoReserva(idCliente, nombreCliente, sectorVip, asientoSeleccionado, filaSeleccionada, tarifaSeleccionada, descuentoEtareo, precioVip, totalValorEntradaSeleccionada);
+
+                                        entradasConfirmadas++;
+                                        reservaPendiente = true;
+                                    } else if (filaSeleccionada == 0) {
+                                        break;
+                                    }
+                                }
+                                System.out.println("Desea seguir reservando entradas? (1 = Si, 0 = No, volver al menu principal)");
+                                opcionMenuRetorno = sc.nextInt();
+
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Error... Ingrgese una opcion valida. Desea seguir reservando entradas? (1 = Si, 0 = No, volver al menu principal");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                            case 2 -> {
+                                entradasConfirmadas = 0;
+                                System.out.println("Has seleccionado una entrada para ingresar al sector Palco." + saltoDeLinea
+                                        + "valor: $" + precioPalco + saltoDeLinea + saltoDeLinea
+                                        + "Cuantas entradas de tipo Palco desea reservar?");
+
+                                while (true) {
+                                    entradasSolicitadas = sc.nextInt();
+                                    if (entradasSolicitadas <= 0) {
+                                        System.out.println("Debe ingresar un numero mayor a 0.");
+                                        continue;
+                                    }
+                                    break;
+                                }
+
+                                System.out.println("(Plano de la sala (X = ocupado, O = libre)");
+                                mostrarPlanoAsientos(FILAS_PALCO, ASIENTOS_PALCO, filaPalco1, filaPalco2, filaPalco3, filaPalco4);
+
+                                while (entradasConfirmadas < entradasSolicitadas) {
+                                    while (!seleccionarReserva(sc, FILAS_PALCO, ASIENTOS_PALCO, filaPalco1, filaPalco2, filaPalco3, filaPalco4)) {
+                                    }
+                                    if (filaSeleccionada == 0) {
+                                        mostrarPlanoAsientos(FILAS_PALCO, ASIENTOS_PALCO, filaPalco1, filaPalco2, filaPalco3, filaPalco4);
+                                        calcularDescuento(sc, precioVip);
+
+                                        System.out.println("A nombre de quien desea reservar las entradas?");
+                                        sc.nextLine();
+                                        nombreCliente = sc.nextLine();
+                                        idCliente++;
+
+                                        añadirAlCarritoReserva(idCliente, nombreCliente, palco, asientoSeleccionado, filaSeleccionada, tarifaSeleccionada, descuentoEtareo, precioPalco, totalValorEntradaSeleccionada);
+
+                                        entradasConfirmadas++;
+                                        reservaPendiente = true;
+                                    } else if (filaSeleccionada == 0) {
+                                        break;
+                                    }
+                                }
+                                System.out.println("Desea seguir reservando entradas? (1 = Si, 0 = No, volver al menu principal)");
+                                opcionMenuRetorno = sc.nextInt();
+
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Error... Ingrgese una opcion valida. Desea seguir reservando entradas? (1 = Si, 0 = No, volver al menu principal");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                            case 3 -> {
+                                entradasConfirmadas = 0;
+                                System.out.println("Has seleccionado una entrada para ingresar al sector PlateaBaja." + saltoDeLinea
+                                        + "valor: $" + precioPlateaBaja + saltoDeLinea + saltoDeLinea
+                                        + "Cuantas entradas de tipo PlateaBaja desea reservar?");
+
+                                while (true) {
+                                    entradasSolicitadas = sc.nextInt();
+                                    if (entradasSolicitadas <= 0) {
+                                        System.out.println("Debe ingresar un numero mayor a 0.");
+                                        continue;
+                                    }
+                                    break;
+                                }
+
+                                System.out.println("(Plano de la sala (X = ocupado, O = libre)");
+                                mostrarPlanoAsientos(FILAS_PLATEA_BAJA, ASIENTOS_PLATEA_BAJA, filaPlateaBaja1, filaPlateaBaja2, filaPlateaBaja3);
+
+                                while (entradasConfirmadas < entradasSolicitadas) {
+                                    while (!seleccionarReserva(sc, FILAS_PLATEA_BAJA, ASIENTOS_PLATEA_BAJA, filaPlateaBaja1, filaPlateaBaja2, filaPlateaBaja3)) {
+                                    }
+                                    if (filaSeleccionada == 0) {
+                                        mostrarPlanoAsientos(FILAS_PLATEA_BAJA, ASIENTOS_PLATEA_BAJA, filaPlateaBaja1, filaPlateaBaja2, filaPlateaBaja3);
+                                        calcularDescuento(sc, precioPlateaBaja);
+
+                                        System.out.println("A nombre de quien desea reservar las entradas?");
+                                        sc.nextLine();
+                                        nombreCliente = sc.nextLine();
+                                        idCliente++;
+
+                                        añadirAlCarritoReserva(idCliente, nombreCliente, PlateaBaja, asientoSeleccionado, filaSeleccionada, tarifaSeleccionada, descuentoEtareo, precioPlateaBaja, totalValorEntradaSeleccionada);
+
+                                        entradasConfirmadas++;
+                                        reservaPendiente = true;
+                                    } else if (filaSeleccionada == 0) {
+                                        break;
+                                    }
+                                }
+                                System.out.println("Desea seguir reservando entradas? (1 = Si, 0 = No, volver al menu principal)");
+                                opcionMenuRetorno = sc.nextInt();
+
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Error... Ingrgese una opcion valida. Desea seguir reservando entradas? (1 = Si, 0 = No, volver al menu principal");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                            case 4 -> {
+                                entradasConfirmadas = 0;
+                                System.out.println("Has seleccionado una entrada para ingresar al sector PlateaAlta." + saltoDeLinea
+                                        + "valor: $" + precioPlateaAlta + saltoDeLinea + saltoDeLinea
+                                        + "Cuantas entradas de tipo PlateaAlta desea reservar?");
+
+                                while (true) {
+                                    entradasSolicitadas = sc.nextInt();
+                                    if (entradasSolicitadas <= 0) {
+                                        System.out.println("Debe ingresar un numero mayor a 0.");
+                                        continue;
+                                    }
+                                    break;
+                                }
+
+                                System.out.println("(Plano de la sala (X = ocupado, O = libre)");
+                                mostrarPlanoAsientos(FILAS_PLATEA_ALTA, ASIENTOS_PLATEA_ALTA, filaPlateaAlta1, filaPlateaAlta2, filaPlateaAlta3);
+
+                                while (entradasConfirmadas < entradasSolicitadas) {
+                                    while (!seleccionarReserva(sc, FILAS_PLATEA_ALTA, ASIENTOS_PLATEA_ALTA, filaPlateaAlta1, filaPlateaAlta2, filaPlateaAlta3)) {
+                                    }
+                                    if (filaSeleccionada == 0) {
+                                        mostrarPlanoAsientos(FILAS_PLATEA_ALTA, ASIENTOS_PLATEA_ALTA, filaPlateaAlta1, filaPlateaAlta2, filaPlateaAlta3);
+                                        calcularDescuento(sc, precioPlateaAlta);
+
+                                        System.out.println("A nombre de quien desea reservar las entradas?");
+                                        sc.nextLine();
+                                        nombreCliente = sc.nextLine();
+                                        idCliente++;
+
+                                        añadirAlCarritoReserva(idCliente, nombreCliente, PlateaAlta, asientoSeleccionado, filaSeleccionada, tarifaSeleccionada, descuentoEtareo, precioPlateaAlta, totalValorEntradaSeleccionada);
+
+                                        entradasConfirmadas++;
+                                        reservaPendiente = true;
+                                    } else if (filaSeleccionada == 0) {
+                                        break;
+                                    }
+                                }
+                                System.out.println("Desea seguir reservando entradas? (1 = Si, 0 = No, volver al menu principal)");
+                                opcionMenuRetorno = sc.nextInt();
+
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Error... Ingrgese una opcion valida. Desea seguir reservando entradas? (1 = Si, 0 = No, volver al menu principal");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                            case 5 -> {
+                                entradasConfirmadas = 0;
+                                System.out.println("Has seleccionado una entrada para ingresar al sector Galeria." + saltoDeLinea
+                                        + "valor: $" + precioGaleria + saltoDeLinea + saltoDeLinea
+                                        + "Cuantas entradas de tipo Galeria desea reservar?");
+
+                                while (true) {
+                                    entradasSolicitadas = sc.nextInt();
+                                    if (entradasSolicitadas <= 0) {
+                                        System.out.println("Debe ingresar un numero mayor a 0.");
+                                        continue;
+                                    }
+                                    break;
+                                }
+
+                                System.out.println("(Plano de la sala (X = ocupado, O = libre)");
+                                mostrarPlanoAsientos(FILAS_GALERIA, ASIENTOS_GALERIA, filaGaleria1, filaGaleria2, filaGaleria3);
+
+                                while (entradasConfirmadas < entradasSolicitadas) {
+                                    while (!seleccionarReserva(sc, FILAS_GALERIA, ASIENTOS_GALERIA, filaGaleria1, filaGaleria2, filaGaleria3)) {
+                                    }
+                                    if (filaSeleccionada == 0) {
+                                        mostrarPlanoAsientos(FILAS_GALERIA, ASIENTOS_GALERIA, filaGaleria1, filaGaleria2, filaGaleria3);
+                                        calcularDescuento(sc, precioPlateaAlta);
+
+                                        System.out.println("A nombre de quien desea reservar las entradas?");
+                                        sc.nextLine();
+                                        nombreCliente = sc.nextLine();
+                                        idCliente++;
+
+                                        añadirAlCarritoReserva(idCliente, nombreCliente, galeria, asientoSeleccionado, filaSeleccionada, tarifaSeleccionada, descuentoEtareo, precioGaleria, totalValorEntradaSeleccionada);
+
+                                        entradasConfirmadas++;
+                                        reservaPendiente = true;
+                                    } else if (filaSeleccionada == 0) {
+                                        break;
+                                    }
+                                }
+                                System.out.println("Desea seguir reservando entradas? (1 = Si, 0 = No, volver al menu principal)");
+                                opcionMenuRetorno = sc.nextInt();
+
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Error... Ingrgese una opcion valida. Desea seguir reservando entradas? (1 = Si, 0 = No, volver al menu principal");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                            case 6 -> {
+                                opcionMenuRetorno = 0;
+                                break;
+                            }
+                            default -> {
+                                System.out.println("ERROR. Numero ingresado invalido. Ingrese 1 para volver a intentar, 0 para Volver al Menu Principal.");
+                                opcionMenuRetorno = sc.nextInt();
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Invalido... Ingrese 1 para volver a Reserva de entradas, 0 para Volver al Menu Principal.");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                        }
+                    } while (opcionMenuRetorno != 0);
+                    System.out.println("Volviendo al Menu Principal..." + saltoDeLinea
+                            + "---------oooooooooooooo---------");
+                }
+                case 3 -> {
+                    System.out.println("Has seleccionado 'Confirmar reserva de entradas'.");
+                    if (reservaPendiente == true) {
+
+                        confirmarReservaCliente();
+                        System.out.println("Confirmando reservas de entradas... Reservas confirmadas." + saltoDeLinea + saltoDeLinea
+                                + "Escriba 0 para volver al Menu Principal");
+                        opcionMenuRetorno = sc.nextInt();
+
+                        while (opcionMenuRetorno != 0) {
+                            System.out.println("Invalido... 0 = Salir al Menu Principal");
+                            opcionMenuRetorno = sc.nextInt();
+                        }
+                        break;
+                    } else {
+                        System.out.println("No hay reservas pendientes por confirmar." + saltoDeLinea + saltoDeLinea + "Escriba 0 para volver al Menu Principal");
+                        opcionMenuRetorno = sc.nextInt();
+
+                        while (opcionMenuRetorno != 0) {
+                            System.out.println("Invalido... 0 = Salir al Menu Principal");
+                            opcionMenuRetorno = sc.nextInt();
+                        }
+                    }
+                    System.out.println("Volviendo al Menu Principal..." + saltoDeLinea + "---------oooooooooooooo---------");
+                }
+                case 4 -> {
+                    System.out.println("Has seleccionado 'Ver Carrito de Compras'." + saltoDeLinea);
+                    do {
+                        totalCompras = 0;
+                        System.out.println(saltoDeLinea + "======Carrito de Compras======" + saltoDeLinea
+                                + "Contenido del carrito:");
+
+                        for (int k = 0; k < historialTipoDeEntrada.size(); k++) {
+
+                            System.out.println("[" + (k + 1) + "] " + historialNombreCliente.get(k) + " Asiento: " + historialFilas.get(k) + "-" + historialAsientos.get(k) + " " + historialTipoDeEntrada.get(k) + ", " + historialTarifas.get(k) + "  $" + historialPrecioFinal.get(k));
+                            System.out.println("----------------------------------------------");
+                        }
+                        for (double entradas : historialPrecioFinal) {
+                            totalCompras += entradas;
+                        }
+                        System.out.println("Total:___________________________________$" + totalCompras + saltoDeLinea);
+
+                        System.out.println(
+                                "1- Eliminar entradas " + saltoDeLinea
+                                + "2- Editar entradas " + saltoDeLinea
+                                + "3- Confirmar reservas " + saltoDeLinea
+                                + "4- Pagar " + saltoDeLinea
+                                + "5- Salir al Menu Principal" + saltoDeLinea + saltoDeLinea
+                                + "Ingrese una opcion: 1, 2, 3, 4 o 5 para desplazarse por el Menu. " + saltoDeLinea);
+                        opcionMenu = sc.nextInt();
+
+                        switch (opcionMenu) {
+                            case 1 -> {
+                                do {
+                                    if (!historialTipoDeEntrada.isEmpty()) {
+                                        System.out.println("Has seleccionado Eliminar Entradas..." + saltoDeLinea + saltoDeLinea
+                                                + "Escribe el numero de la entrada que deseas eliminar.");
+                                        opcionEliminarEntrada = sc.nextInt();
+
+                                        if (opcionEliminarEntrada >= 1 && opcionEliminarEntrada <= historialPrecioFinal.size()) {
+
+                                            liberarAsiento(
+                                                    historialTipoDeEntrada.get(opcionEliminarEntrada - 1),
+                                                    historialFilas.get(opcionEliminarEntrada - 1),
+                                                    historialAsientos.get(opcionEliminarEntrada - 1)
+                                            );
+                                            historialIdCliente.remove(opcionEliminarEntrada - 1);
+                                            historialNombreCliente.remove(opcionEliminarEntrada - 1);
+                                            historialTipoDeEntrada.remove(opcionEliminarEntrada - 1);
+                                            historialAsientos.remove(opcionEliminarEntrada - 1);
+                                            historialFilas.remove(opcionEliminarEntrada - 1);
+                                            historialTarifas.remove(opcionEliminarEntrada - 1);
+                                            historialDescuentoEtareo.remove(opcionEliminarEntrada - 1);
+                                            historialPrecios.remove(opcionEliminarEntrada - 1);
+                                            historialPrecioFinal.remove(opcionEliminarEntrada - 1);
+
+                                        } else {
+                                            System.out.println("El numero de entrada no existe. Ingrese 0 para volver al Menu Principal.");
+                                            opcionMenuRetorno = sc.nextInt();
+                                            while (opcionMenuRetorno != 0) {
+                                                System.out.println("Invalido... Ingrese 0 para Continuar");
+                                                opcionMenuRetorno = sc.nextInt();
+                                                break;
+                                            }
+                                            break;
+                                        }
+
+                                        System.out.println("Eliminando entrada seleccionada: Nro" + opcionEliminarEntrada + saltoDeLinea + saltoDeLinea
+                                                + "Desea seguir eliminando Entradas? Ingrese 1 para Si, 0 para volver al Carrito de Compras.");
+                                        opcionMenuRetorno = sc.nextInt();
+                                        while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                            System.out.println("Invalido... Ingrese 1 para seguir eliminando entradas, o 0 para volver al Menu Principal.");
+                                            opcionMenuRetorno = sc.nextInt();
+                                        }
+
+                                    } else {
+                                        System.out.println("El carrito esta vacio. No es posible eliminar entradas. Escriba 0 para volver al Menu Principal");
+                                        opcionMenuRetorno = sc.nextInt();
+                                        while (opcionMenuRetorno != 0) {
+                                            System.out.println("Invalido... Ingrese 0 para volver al Menu Principal.");
+                                            opcionMenuRetorno = sc.nextInt();
+                                        }
+                                    }
+                                } while (opcionMenuRetorno == 1);
+                            }
+                            case 2 -> {
+                                System.out.println("Has seleccionado 'Editar entradas'." + saltoDeLinea);
+
+                                for (int k = 0; k < historialTipoDeEntrada.size(); k++) {
+                                    System.out.println("[" + (k + 1) + "] " + historialNombreCliente.get(k) + " Asiento: " + historialFilas.get(k) + "-" + historialAsientos.get(k) + ", " + historialTipoDeEntrada.get(k) + ", " + historialTarifas.get(k) + ", " + historialDescuentoEtareo.get(k) + "  $" + historialPrecioFinal.get(k));
+                                    System.out.println("----------------------------------------------");
+                                }
+
+                                System.out.println("Que numero de entrada deseas editar? " + saltoDeLinea);
+                                opcionEditarEntrada = sc.nextInt();
+
+                                if (opcionEditarEntrada >= 0 && opcionEditarEntrada <= historialNombreCliente.size()) {
+                                    System.out.println("Que aspecto deseas editar de la entrada?" + saltoDeLinea
+                                            + "1- Nombre" + saltoDeLinea
+                                            + "2- Asiento" + saltoDeLinea
+                                            + "3- Tipo de Entrada" + saltoDeLinea
+                                            + "4- Tarifa" + saltoDeLinea
+                                            + "5- Salir al Menu Principal");
+                                    opcionMenu = sc.nextInt();
+
+                                    OUTER:
+                                    switch (opcionMenu) {
+                                        case 1 -> {
+                                            System.out.println("Has seleccionado 'Reemplazar Nombre de Entradas'..." + saltoDeLinea
+                                                    + "Esta a punto de reemplazar: " + historialNombreCliente.get(opcionEditarEntrada - 1) + saltoDeLinea
+                                                    + "Escriba el nuevo nombre...");
+                                            nuevoNombre = sc.nextLine();
+
+                                            historialNombreCliente.set(opcionEditarEntrada - 1, nuevoNombre);
+                                            System.out.println("El nombre se ha cambiado con exito.");
+                                        }
+                                        case 2 -> {
+                                            System.out.println("Has seleccionado 'Reemplazar Asientos de Entradas'...");
+                                            liberarAsiento(
+                                                    historialTipoDeEntrada.get(opcionEditarEntrada - 1),
+                                                    historialFilas.get(opcionEditarEntrada - 1),
+                                                    historialAsientos.get(opcionEditarEntrada - 1)
+                                            );
+                                            switch (historialTipoDeEntrada.get(opcionEditarEntrada - 1)) {
+                                                case "Sector VIP":
+                                                    seleccionarAsiento(sc, FILAS_VIP, ASIENTOS_VIP, filaVip1, filaVip2, filaVip3);
+                                                    historialFilas.set(opcionEditarEntrada - 1, filaSeleccionada);
+                                                    historialAsientos.set(opcionEditarEntrada - 1, asientoSeleccionado);
+                                                    break OUTER;
+                                                case "Sector Palco":
+                                                    seleccionarAsiento(sc, FILAS_PALCO, ASIENTOS_PALCO, filaPalco1, filaPalco2, filaPalco3, filaPalco4);
+                                                    historialFilas.set(opcionEditarEntrada - 1, filaSeleccionada);
+                                                    historialAsientos.set(opcionEditarEntrada - 1, asientoSeleccionado);
+                                                    break OUTER;
+                                                case "Platea Baja":
+                                                    seleccionarAsiento(sc, FILAS_PLATEA_BAJA, ASIENTOS_PLATEA_BAJA, filaPlateaBaja1, filaPlateaBaja2, filaPlateaBaja3);
+                                                    historialFilas.set(opcionEditarEntrada - 1, filaSeleccionada);
+                                                    historialAsientos.set(opcionEditarEntrada - 1, asientoSeleccionado);
+                                                    break OUTER;
+                                                case "Platea Alta":
+                                                    seleccionarAsiento(sc, FILAS_PLATEA_ALTA, ASIENTOS_PLATEA_ALTA, filaPlateaAlta1, filaPlateaAlta2, filaPlateaAlta3);
+                                                    historialFilas.set(opcionEditarEntrada - 1, filaSeleccionada);
+                                                    historialAsientos.set(opcionEditarEntrada - 1, asientoSeleccionado);
+                                                    break OUTER;
+                                                case "Galeria":
+                                                    seleccionarAsiento(sc, FILAS_GALERIA, ASIENTOS_GALERIA, filaGaleria1, filaGaleria2, filaGaleria3);
+                                                    historialFilas.set(opcionEditarEntrada - 1, filaSeleccionada);
+                                                    historialAsientos.set(opcionEditarEntrada - 1, asientoSeleccionado);
+                                                    break OUTER;
+                                                default:
+                                                    break;
+                                            }
+                                        }
+                                        case 3 -> {
+                                            System.out.println("Has seleccionado 'Reemplazar Tipo de Entradas'..." + saltoDeLinea
+                                                    + "Esta a punto de reemplazar entrada de tipo: " + historialTipoDeEntrada.get(opcionEditarEntrada - 1) + saltoDeLinea
+                                                    + "Seleccione el nuevo Tipo de Entrada por el que desea remplazar." + saltoDeLinea
+                                                    + "1- Entrada VIP." + saltoDeLinea
+                                                    + "2- Entrada Platea Baja" + saltoDeLinea
+                                                    + "3- Entrada Platea Alta" + saltoDeLinea
+                                                    + "4- Volver al Menu Principal");
+                                            opcionMenu = sc.nextInt();
+
+                                            switch (opcionMenu) {
+                                                case 1:
+                                                    historialTipoDeEntrada.set(opcionEditarEntrada - 1, sectorVip);
+                                                    historialPrecios.set(opcionEditarEntrada - 1, precioVip);
+
+                                                    if ("Estudiante" == historialTarifas.get(opcionEditarEntrada - 1)) {
+                                                        historialPrecioFinal.set(opcionEditarEntrada - 1, precioVip * 0.85);
+                                                    } else if ("Mujeres" == historialTarifas.get(opcionEditarEntrada - 1)) {
+                                                        historialPrecioFinal.set(opcionEditarEntrada - 1, precioVip * 0.80);
+                                                    } else if ("Publico General" == historialTarifas.get(opcionEditarEntrada - 1)) {
+                                                        historialPrecioFinal.set(opcionEditarEntrada - 1, precioVip);
+                                                    }
+                                                    break;
+                                                case 2:
+                                                    historialTipoDeEntrada.set(opcionEditarEntrada - 1, PlateaBaja);
+                                                    historialPrecios.set(opcionEditarEntrada - 1, precioPlateaBaja);
+
+                                                    if ("Estudiante" == historialTarifas.get(opcionEditarEntrada - 1)) {
+                                                        historialPrecioFinal.set(opcionEditarEntrada - 1, precioPlateaBaja * 0.85);
+                                                    } else if ("Mujeres" == historialTarifas.get(opcionEditarEntrada - 1)) {
+                                                        historialPrecioFinal.set(opcionEditarEntrada - 1, precioPlateaBaja * 0.80);
+                                                    } else if ("Publico General" == historialTarifas.get(opcionEditarEntrada - 1)) {
+                                                        historialPrecioFinal.set(opcionEditarEntrada - 1, precioPlateaBaja);
+                                                    }
+                                                    break;
+                                                case 3:
+                                                    historialTipoDeEntrada.set(opcionEditarEntrada - 1, PlateaAlta);
+                                                    historialPrecios.set(opcionEditarEntrada - 1, precioPlateaAlta);
+
+                                                    if ("Estudiante" == historialTarifas.get(opcionEditarEntrada - 1)) {
+                                                        historialPrecioFinal.set(opcionEditarEntrada - 1, precioPlateaAlta * 0.85);
+                                                    } else if ("Mujeres" == historialTarifas.get(opcionEditarEntrada - 1)) {
+                                                        historialPrecioFinal.set(opcionEditarEntrada - 1, precioPlateaAlta * 0.80);
+                                                    } else if ("Publico General" == historialTarifas.get(opcionEditarEntrada - 1)) {
+                                                        historialPrecioFinal.set(opcionEditarEntrada - 1, precioPlateaAlta);
+                                                    }
+                                                    break;
+                                                case 4:
+                                                    System.out.println("Volviendo al Menu Principal...");
+                                                    opcionMenuRetorno = 0;
+                                                    break;
+                                                default:
+                                                    System.out.println("ERROR. Numero ingresado invalido. Ingrese 1 para volver a intentar, 0 para Volver al Menu Principal.");
+                                                    opcionMenuRetorno = sc.nextInt();
+                                                    while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                                        System.out.println("Invalido... Ingrese 1 para volver a intentar, 0 para Volver al Menu Principal.");
+                                                        opcionMenuRetorno = sc.nextInt();
+                                                    }
+                                                    break;
+                                            }
+                                            if (historialDescuentoEtareo.get(opcionEditarEntrada - 1) == "Niños/as") {
+                                                historialPrecioFinal.set(opcionEditarEntrada - 1, historialPrecioFinal.get(opcionEditarEntrada - 1) * 0.9);
+                                            } else if (historialDescuentoEtareo.get(opcionEditarEntrada - 1) == "Adultos/as Mayores") {
+                                                historialPrecioFinal.set(opcionEditarEntrada - 1, historialPrecioFinal.get(opcionEditarEntrada - 1) * 0.75);
+                                            } else if (historialDescuentoEtareo.get(opcionEditarEntrada - 1) == "Sin descuento") {
+                                                historialPrecioFinal.set(opcionEditarEntrada - 1, historialPrecioFinal.get(opcionEditarEntrada - 1));
+                                            }
+
+                                            System.out.println("El Tipo de Entrada se ha cambiado con exito.");
+                                        }
+                                        case 4 -> {
+                                            System.out.println("Has seleccionado 'Reemplazar Tarifa de Entradas'..." + saltoDeLinea
+                                                    + "Esta a punto de reemplazar la Tarifa de tipo: " + historialTarifas.get(opcionEditarEntrada - 1)
+                                                    + "Seleccione la nueva tarifa por la que desea remplazar." + saltoDeLinea
+                                                    + "1- Estudiantes." + saltoDeLinea
+                                                    + "2- Mujeres" + saltoDeLinea
+                                                    + "3- Publico General" + saltoDeLinea
+                                                    + "4- Volver al Menu Principal");
+                                            opcionMenu = sc.nextInt();
+
+                                            switch (opcionMenu) {
+                                                case 1 -> {
+                                                    historialPrecioFinal.set(opcionEditarEntrada - 1, historialPrecios.get(opcionEditarEntrada - 1) * 0.85);
+                                                }
+                                                case 2 -> {
+                                                    historialPrecioFinal.set(opcionEditarEntrada - 1, historialPrecios.get(opcionEditarEntrada - 1) * 0.80);
+                                                }
+                                                case 3 -> {
+                                                    historialPrecioFinal.set(opcionEditarEntrada - 1, historialPrecios.get(opcionEditarEntrada - 1));
+                                                }
+                                                case 4 -> {
+                                                    System.out.println("Volviendo al Menu Principal...");
+                                                    opcionMenuRetorno = 0;
+                                                    break;
+                                                }
+                                            }
+                                            if (historialDescuentoEtareo.get(opcionEditarEntrada - 1) == "Niños/as") {
+                                                historialPrecioFinal.set(opcionEditarEntrada - 1, historialPrecioFinal.get(opcionEditarEntrada - 1) * 0.9);
+                                            } else if (historialDescuentoEtareo.get(opcionEditarEntrada - 1) == "Adultos/as Mayores") {
+                                                historialPrecioFinal.set(opcionEditarEntrada - 1, historialPrecioFinal.get(opcionEditarEntrada - 1) * 0.75);
+                                            } else if (historialDescuentoEtareo.get(opcionEditarEntrada - 1) == "Sin descuento") {
+                                                historialPrecioFinal.set(opcionEditarEntrada - 1, historialPrecioFinal.get(opcionEditarEntrada - 1));
+                                            }
+                                            System.out.println("El Tipo de Entrada se ha cambiado con exito.");
+                                        }
+                                        case 5 -> {
+                                            System.out.println("Volviendo al Menu Principal...");
+                                            opcionMenuRetorno = 0;
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    System.out.println("Ingrese un numero de entrada valido.");
+                                }
+                            }
+
+                            case 3 -> {
+                                System.out.println("Has seleccionado 'Confirmar reserva de entradas'.");
+                                if (reservaPendiente == true) {
+
+                                    confirmarReservaCliente();
+
+                                    System.out.println("Confirmando reservas de entradas... Reservas confirmadas." + saltoDeLinea + saltoDeLinea
+                                            + "Escriba 0 para volver al Menu Principal");
+                                    opcionMenuRetorno = sc.nextInt();
+
+                                    while (opcionMenuRetorno != 0) {
+                                        System.out.println("Invalido... 0 = Salir al Menu Principal");
+                                        opcionMenuRetorno = sc.nextInt();
+                                    }
+                                    break;
+                                } else {
+                                    System.out.println("No hay reservas pendientes por confirmar." + saltoDeLinea + saltoDeLinea
+                                            + "Escriba 0 para volver al Menu Principal");
+                                    opcionMenuRetorno = sc.nextInt();
+
+                                    while (opcionMenuRetorno != 0) {
+                                        System.out.println("Invalido... 0 = Salir al Menu Principal");
+                                        opcionMenuRetorno = sc.nextInt();
+                                    }
+                                }
+                                System.out.println("Volviendo al Menu Principal..." + saltoDeLinea
+                                        + "---------oooooooooooooo---------");
+                            }
+                            case 4 -> {
+                                System.out.println("Por favor. Ingrese el monto para realizar el pago.");
+                                do {
+                                    montoPago = sc.nextDouble();
+
+                                    if (montoPago == totalCompras) {
+
+                                        System.out.println(saltoDeLinea + "===========================Boleta de compra===========================");
+
+                                        for (int k = 0; k < historialTipoDeEntrada.size(); k++) {
+
+                                            System.out.println("Entrada Nro. " + historialIdCliente.get(k) + saltoDeLinea
+                                                    + "Nombre Cliente:" + historialNombreCliente.get(k) + saltoDeLinea
+                                                    + "Tipo: " + historialTipoDeEntrada.get(k) + saltoDeLinea
+                                                    + "Fila: " + historialFilas.get(k) + saltoDeLinea
+                                                    + "Asiento: " + historialAsientos.get(k) + saltoDeLinea
+                                                    + "Precio Original: " + historialPrecios.get(k) + saltoDeLinea
+                                                    + "Tarifa: " + historialTarifas.get(k) + saltoDeLinea
+                                                    + "Descuento Etareo: " + historialDescuentoEtareo.get(k) + saltoDeLinea
+                                                    + "Precio con descuento: $" + historialPrecioFinal.get(k) + saltoDeLinea
+                                                    + "-----------------------" + saltoDeLinea);
+                                        }
+
+                                        if (historialTipoDeEntrada.size() > 1) {
+                                            System.out.println("Total:________________$" + totalCompras);
+                                        }
+
+                                        System.out.println("Compra realizada con exito! (Deslice hacia arriba para ver el detalle de su boleta)" + saltoDeLinea + saltoDeLinea + "Muchas gracias por utilizar la boleteria virtual de Teatro Moro. Vuelve pronto!");
+                                        return;
+                                    } else if (montoPago > totalCompras) {
+                                        vuelto = montoPago - totalCompras;
+
+                                        System.out.println(saltoDeLinea + "================Boleta de compra================");
+
+                                        for (int k = 0; k < historialTipoDeEntrada.size(); k++) {
+
+                                            System.out.println("Entrada Nro. " + historialIdCliente.get(k) + saltoDeLinea
+                                                    + "Nombre Cliente:" + historialNombreCliente.get(k) + saltoDeLinea
+                                                    + "Tipo: " + historialTipoDeEntrada.get(k) + saltoDeLinea
+                                                    + "Fila: " + historialFilas.get(k) + saltoDeLinea
+                                                    + "Asiento: " + historialAsientos.get(k) + saltoDeLinea
+                                                    + "Precio Original: " + historialPrecios.get(k) + saltoDeLinea
+                                                    + "Tarifa: " + historialTarifas.get(k) + saltoDeLinea
+                                                    + "Descuento Etareo: " + historialDescuentoEtareo.get(k) + saltoDeLinea
+                                                    + "Precio con descuento: $" + historialPrecioFinal.get(k) + saltoDeLinea
+                                                    + "-----------------------" + saltoDeLinea);
+                                        }
+                                        if (historialTipoDeEntrada.size() > 1) {
+                                            System.out.println("Total:________________$" + totalCompras);
+                                        }
+                                        System.out.println("Monto ingresado:______$" + montoPago + saltoDeLinea + "Tu vuelto es:_________$" + vuelto + saltoDeLinea + saltoDeLinea + "Compra realizada con exito! (Deslice hacia arriba para ver el detalle de su boleta)" + saltoDeLinea + "Muchas gracias por utilizar la boleteria virtual de Teatro Moro. Vuelve pronto!");
+                                        return;
+                                    } else if (montoPago < totalCompras) {
+
+                                        System.out.println("El monto ingresado no es suficiente. El pago no se pudo realizar." + saltoDeLinea + "Desea reintentarlo? ( 1 para volver a intentarlo, 0 para salir al Menu Principal)");
+                                        opcionMenuRetorno = sc.nextInt();
+
+                                        if (opcionMenuRetorno == 1) {
+                                            System.out.println("Por favor, ingrese el monto para realizar el pago. $" + totalCompras);
+                                        } else if (opcionMenuRetorno == 0) {
+                                            break;
+                                        }
+                                    }
+                                } while (opcionMenuRetorno != 0);
+                            }
+                            case 5 -> {
+                                System.out.println("Volviendo al Menu Principal...");
+                                opcionMenuRetorno = 0;
+                                break;
+                            }
+                            default -> {
+                                System.out.println("ERROR. Numero ingresado invalido. Ingrese 1 para volver a intentar, 0 para Volver al Menu Principal.");
+                                opcionMenuRetorno = sc.nextInt();
+                                while (opcionMenuRetorno < 0 || opcionMenuRetorno > 1) {
+                                    System.out.println("Invalido... Ingrese 1 para volver a intentar, 0 para Volver al Menu Principal.");
+                                    opcionMenuRetorno = sc.nextInt();
+                                }
+                            }
+                        }
+                    } while (opcionMenuRetorno != 0);
+                    System.out.println("Volviendo al Menu Principal..." + saltoDeLinea + "---------oooooooooooooo---------");
+                }
+                case 5 -> {
+                    do {
+                        System.out.println(saltoDeLinea + "                    ========= Asientos disponibles =========" + saltoDeLinea);
+
+                        mostrarPlanoAsientos(FILAS_VIP, ASIENTOS_VIP, filaVip1, filaVip2, filaVip3);
+                        mostrarPlanoAsientos(FILAS_PLATEA_BAJA, ASIENTOS_PLATEA_BAJA, filaPlateaBaja1, filaPlateaBaja2, filaPlateaBaja3);
+                        mostrarPlanoAsientos(FILAS_PLATEA_ALTA, ASIENTOS_PLATEA_ALTA, filaPlateaAlta1, filaPlateaAlta2, filaPlateaAlta3);
+                        mostrarPlanoAsientos(FILAS_GALERIA, ASIENTOS_GALERIA, filaGaleria1, filaGaleria2, filaGaleria3);
+                        mostrarPlanoAsientos(FILAS_PALCO, ASIENTOS_PALCO, filaPalco1, filaPalco2, filaPalco3, filaPalco4);
+
+                        System.out.println(saltoDeLinea + "Escriba 0 para volver al Menu Principal");
+                        opcionMenuRetorno = sc.nextInt();
+
+                        while (opcionMenuRetorno != 0) {
+                            System.out.println("Invalido. Escriba 0 para volver al Menu Principal");
+                            opcionMenuRetorno = sc.nextInt();
+                        }
+                    } while (opcionMenuRetorno != 0);
+                    System.out.println("Volviendo al Menu Principal..." + saltoDeLinea + "---------oooooooooooooo---------");
+                }
+                case 6 -> {
+                    do {
+                        System.out.println("Has seleccionado 'Ver Promociones.'" + saltoDeLinea
+                                + "================Promociones del Teatro================" + saltoDeLinea + saltoDeLinea
+                                + "TARIFAS:" + saltoDeLinea
+                                + "- Descuento del 15% dirigido a estudiantes" + saltoDeLinea
+                                + "- Descuento del 20% dirigido a mujeres" + saltoDeLinea + saltoDeLinea
+                                + "DESCUENTOS ADICIONALES:" + saltoDeLinea
+                                + "- Descuento del 10% dirigido a niños/as" + saltoDeLinea
+                                + "- Descuento del 25% dirigido a adultos mayores" + saltoDeLinea
+                                + "*Los descuentos adicionales se aplican por sobre la tarifa.");
+
+                        System.out.println(saltoDeLinea + "Escriba 0 para volver al Menu Principal)");
+                        opcionMenuRetorno = sc.nextInt();
+
+                        while (opcionMenuRetorno != 0) {
+                            System.out.println("Invalido. Escriba 0 para volver al Menu Principal");
+                            opcionMenuRetorno = sc.nextInt();
+                        }
+                    } while (opcionMenuRetorno != 0);
+                    System.out.println("Volviendo al Menu Principal..." + saltoDeLinea + "---------oooooooooooooo---------");
+                }
+                case 7 -> {
+                    System.out.println("Muchas gracias por por utilizar el sistema vitual de Teatro Moro. Vuelva pronto" + saltoDeLinea);
+                    return;
+                }
+                default -> {
+                    System.out.println("ERROR. Numero ingresado invalido. Ingrese 0 para volver a intentar.");
+                    opcionMenuRetorno = sc.nextInt();
+                    while (opcionMenuRetorno != 0) {
+                        System.out.println("Invalido... Ingrese 0 para continuar");
+                        opcionMenuRetorno = sc.nextInt();
+                    }
+                }
+            }
+        }
+    }
+}
